@@ -1,0 +1,36 @@
+---
+kind: pipeline
+type: docker
+name: ubuntu
+
+steps:
+- name: clone-gn
+  image: drone/git
+  commands:
+  - |
+    if [[ ! -d gn ]]; then
+      git clone https://gn.googlesource.com/gn
+      cd gn
+      git remote add github https://$TOKEN:x-oauth-basic@github.com/sfiera/gn
+    else
+      cd gn
+    fi
+  - git fetch --tags origin
+  - git fetch --tags github
+  - git merge --ff-only origin/master
+  - git push github master:master
+  environment:
+    TOKEN:
+      from_secret: github_token
+
+- name: release
+  image: python:3.8
+  commands:
+  - pip3 install requests
+  - scripts/release.py
+  settings:
+    repo: sfiera/gn
+    token:
+      from_secret: github_token
+
+...
