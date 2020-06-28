@@ -30,8 +30,7 @@ def main():
 def create_release():
     "Creates a GitHub release for $PLUGIN_REPO"
     os.chdir("gn")
-    #ref = deps_ref()
-    ref = "7d7e8deea36d126397bda2cf924682504271f0e1"
+    ref = deps_ref()
     print("Chromium DEPS uses gn@%s" % ref)
     subprocess.check_call(["git", "checkout", "master"])
     subprocess.check_call(["git", "reset", "--hard", ref])
