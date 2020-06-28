@@ -39,13 +39,14 @@ def create_release():
     if tag is not None:
         print("Already tagged as %s" % tag)
         return tag
+    log = log_since_tag()
 
     name, described = describe()
     os.chdir("..")
     distfile = dist(name, described)
     print("Generated %s" % distfile)
 
-    url = release(name, ref, distfile)
+    url = release(name, ref, distfile, log)
     print("Created %s" % url)
     return name
 
@@ -73,6 +74,13 @@ def describe():
                                          "--match=initial-commit"]).strip().decode("utf-8")
     name = "0.0." + described.split("-")[2]
     return name, described
+
+
+def log_since_tag():
+    prev_tag = subprocess.check_output(["git", "describe", "--tags",
+                                        "--abbrev=0"]).strip().decode("utf-8")
+    return subprocess.check_output(["git", "log", "--format=format:* %s",
+                                    "%s.." % prev_tag]).decode("utf-8")
 
 
 def dist(name, described):
@@ -112,7 +120,7 @@ def walk(archive_root, walk_root):
             yield real_path, archive_path
 
 
-def release(name, ref, distfile):
+def release(name, ref, distfile, body):
     "POST /repos/:owner/:repo/releases"
     release_url = "https://api.github.com/repos/%s/releases" % REPO
     resp = requests.post(release_url,
@@ -122,6 +130,7 @@ def release(name, ref, distfile):
                              "target_commitish": ref,
                              "name": name,
                              "draft": True,
+                             "body": body,
                          })
     resp.raise_for_status()
     release_url = resp.json()["url"]
